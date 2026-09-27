@@ -1,16 +1,14 @@
-from aiogram import F, Router
+from datetime import date, timedelta
+
+from aiogram import Router
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import CallbackQuery
 
 from api import GApiClient, GApiError, GApiNotFound
-
 from keyboards.callbacks import MenuAction, ScheduleOffset
-
 from keyboards.menu import back_to_menu
 from keyboards.schedule import schedule_nav
-
 from storage import UserStorage
-
 from utils.formatting import format_day_schedule
 
 
@@ -19,6 +17,36 @@ router = Router(name="schedule")
 NO_GROUP_TEXT = "Сначала выбери группу 🏫"
 
 
+async def _get_schedule(
+    api: GApiClient,
+    group: str,
+    offset: str,
+):
+    today = date.today()
+
+    offset_days = {
+        "yesterday": -1,
+        "today": 0,
+        "tomorrow": 1,
+    }
+
+    target_date = today + timedelta(days=offset_days[offset])
+
+    # Воскресенье не запрашиваем у API.
+    # Сразу перенаправляем на понедельник.
+    if target_date.weekday() == 6:
+        target_date += timedelta(days=1)
+
+        return await api.get_schedule(
+            group=group,
+            date=target_date.isoformat(),
+        )
+
+    return await api.get_schedule_for_group(
+        group,
+        offset,
+    )
+
 @router.callback_query(ScheduleOffset.filter())
 async def show_schedule(
     callback: CallbackQuery,
@@ -26,22 +54,32 @@ async def show_schedule(
     api: GApiClient,
     storage: UserStorage,
 ):
+    if date.today().weekday() == 6 and callback_data.offset == "today":
+        await callback.answer()
+        return
+
+    await callback.answer("Загружаю…")
+
     group = await storage.get_group(callback.from_user.id)
 
     if not group:
-        await callback.answer(NO_GROUP_TEXT, show_alert=True)
+        await callback.message.edit_text(
+            NO_GROUP_TEXT,
+            reply_markup=back_to_menu(),
+        )
         return
 
     try:
-        day = await api.get_schedule_for_group(
+        day = await _get_schedule(
+            api,
             group,
             callback_data.offset,
         )
     except GApiNotFound as e:
-        await callback.answer(str(e), show_alert=True)
+        await callback.message.answer(str(e))
         return
     except GApiError as e:
-        await callback.answer(str(e), show_alert=True)
+        await callback.message.answer(str(e))
         return
 
     try:
@@ -53,23 +91,10 @@ async def show_schedule(
         if "message is not modified" not in str(e):
             raise
 
-    await callback.answer()
 
-
-@router.callback_query(MenuAction.filter(F.action == "weektype"))
-async def show_week_type(
+@router.callback_query(MenuAction.filter())
+async def handle_menu_action(
     callback: CallbackQuery,
-    api: GApiClient,
+    callback_data: MenuAction,
 ):
-    try:
-        week_type = await api.get_current_week_type()
-    except GApiError as e:
-        await callback.answer(str(e), show_alert=True)
-        return
-
-    await callback.message.edit_text(
-        f"🗓 Сейчас идёт: <b>{week_type.label}</b>",
-        reply_markup=back_to_menu(),
-    )
-
-    await callback.answer()
+    ...

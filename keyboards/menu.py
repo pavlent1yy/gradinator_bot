@@ -1,14 +1,20 @@
+from datetime import date
+
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from .callbacks import MenuAction, ScheduleOffset
 
 
 def main_menu(has_group: bool) -> InlineKeyboardMarkup:
+    is_sunday = date.today().weekday() == 6
+
+    actual_offset = "tomorrow" if is_sunday else "today"
+
     rows = [
         [
             InlineKeyboardButton(
                 text="📅 Актуальное расписание",
-                callback_data=ScheduleOffset(offset="today").pack(),
+                callback_data=ScheduleOffset(offset=actual_offset).pack(),
             )
         ],
         [
@@ -38,6 +44,7 @@ def main_menu(has_group: bool) -> InlineKeyboardMarkup:
             )
         ],
     ]
+
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
@@ -46,7 +53,8 @@ def back_to_menu() -> InlineKeyboardMarkup:
         inline_keyboard=[
             [
                 InlineKeyboardButton(
-                    text="◀️ В меню", callback_data=MenuAction(action="home").pack()
+                    text="◀️ В меню",
+                    callback_data=MenuAction(action="home").pack(),
                 )
             ]
         ]
