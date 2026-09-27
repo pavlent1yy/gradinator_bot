@@ -18,7 +18,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-RUN useradd -m botuser && chown -R botuser /app
+# Не root-пользователь + каталог для sqlite с правами на запись
+RUN useradd -m botuser \
+	&& mkdir -p /app/data \
+	&& chown -R botuser:botuser /app
 USER botuser
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
