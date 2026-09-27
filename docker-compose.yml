@@ -1,0 +1,20 @@
+services:
+  gradinator-bot:
+    build: .
+    container_name: gradinator-bot
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      TZ: Europe/Moscow
+      DB_PATH: /app/data/gradinator_bot.sqlite3
+      PROXY: socks5://host.docker.internal:10808
+    volumes:
+      - bot_data:/app/data
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    # Если G-API тоже на этом хосте, укажи в .env:
+    # API_BASE_URL=http://host.docker.internal:9090
+
+volumes:
+  bot_data:

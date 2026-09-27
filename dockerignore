@@ -1,0 +1,8 @@
+.git
+.env
+.env.example
+*.sqlite3
+__pycache__/
+*.pyc
+README.md
+deploy/

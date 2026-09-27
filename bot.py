@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
@@ -21,9 +22,12 @@ logging.basicConfig(
 async def main():
     config = load_config()
 
-    session = AiohttpSession(
-        proxy="socks5://127.0.0.1:10808"
-    )
+    proxy = os.getenv("PROXY", "").strip()
+    if proxy:
+        session = AiohttpSession(proxy=proxy)
+        logging.getLogger(__name__).info("Используется прокси: %s", proxy)
+    else:
+        session = None
 
     bot = Bot(
         token=config.bot_token,
