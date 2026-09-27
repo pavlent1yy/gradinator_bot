@@ -42,12 +42,13 @@ def _active_cell(
 
 
 def format_day_header(schedule: DaySchedule) -> str:
-    emoji = WEEK_TYPE_EMOJI[schedule.week_type]
+    week_emoji = WEEK_TYPE_EMOJI[schedule.week_type]
 
     return (
-        f"<b>{escape(schedule.day)}, {escape(schedule.date)}</b>\n"
-        f"{emoji} Неделя: <b>{schedule.week_type.label}</b> · "
-        f"Группа: <code>{escape(schedule.group)}</code>"
+        "<b>// SCHEDULE</b> · "
+        f"<code>{escape(schedule.group)}</code>\n"
+        f"{escape(schedule.day)}, {escape(schedule.date)} · "
+        f"{week_emoji} <b>{schedule.week_type.label}</b>"
     )
 
 
@@ -61,34 +62,42 @@ def format_pair(
         return None
 
     subject = _join(cell.subjects)
-    rooms = _join(cell.rooms)
     teachers = _join(cell.teachers)
+    rooms = _join(cell.rooms)
 
-    lines = [
-        f"<b>{pair.pair_number}</b>",
-        f"📚 {escape(subject)}",
-        f"   🏫 {escape(rooms)} · 👤 {escape(teachers)}",
-    ]
+    first_line = (
+        f"<b>{pair.pair_number:02}</b> │ "
+        f"📚 {escape(subject)}"
+    )
+
+    second_line = (
+        f"   └─ 👤 {escape(teachers)} · "
+        f"🏫 {escape(rooms)}"
+    )
 
     if pair.has_changes:
-        lines.append("   ❗ <i>замена</i>")
+        second_line += " ❗️"
 
-    return "\n".join(lines)
+    return f"{first_line}\n{second_line}"
 
 
 def format_day_schedule(schedule: DaySchedule) -> str:
     header = format_day_header(schedule)
 
-    pairs = []
-
-    for pair in sorted(schedule.pairs, key=lambda pair: pair.pair_number):
-        formatted = format_pair(pair, schedule.week_type)
-
-        if formatted:
-            pairs.append(formatted)
+    pairs = [
+        formatted
+        for pair in sorted(
+            schedule.pairs,
+            key=lambda pair: pair.pair_number,
+        )
+        if (formatted := format_pair(pair, schedule.week_type))
+    ]
 
     if not pairs:
-        return f"{header}\n\n<i>Пар в этот день нет 🎉</i>"
+        return (
+            f"{header}\n\n"
+            "<i>Пар в этот день нет 🎉</i>"
+        )
 
     return f"{header}\n\n" + "\n\n".join(pairs)
 

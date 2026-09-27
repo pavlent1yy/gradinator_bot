@@ -9,9 +9,15 @@ from storage import UserStorage
 router = Router(name="start")
 
 WELCOME = (
-    "👋 <b>Gradinator</b> - бот расписания колледжа.\n\n"
-    "Тут актуальное расписание, тип недели и справочники по преподавателям, "
-    "предметам и аудиториям."
+    "👋 <b>GradInator</b> — мой неофициальный бот расписания ЯГК.\n\n"
+    "📅 Я сделал его, чтобы тебе было проще смотреть актуальное расписание, "
+    "тип недели и справочники по преподавателям, предметам и аудиториям.\n\n"
+    "🌐 Если хочешь, можешь также заглянуть на мой сайт:\n"
+    "<a href='https://gradinator.itsyoraaa.su'>gradinator.itsyoraaa.su</a>\n\n"
+    "💻 А если интересно, то можешь глянуть, как я всё это дело реализовал:\n"
+    "<b><a href='https://github.com/pavlent1yy/Gradinator'>сайт и система gradinator</a></b>\n"
+    "<b><a href='https://github.com/pavlent1yy/gradinator_bot'>telegram-клиент для api</a></b>\n\n"
+    "📦 Исходники моих проектов лежат на GitHub."
 )
 
 
