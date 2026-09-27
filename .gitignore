@@ -9,8 +9,6 @@ node_modules/
 .next/
 *.tsbuildinfo
 
-# Private configuration
-**/src/main/resources/private-info.properties
 **/.env
 
 # IDE

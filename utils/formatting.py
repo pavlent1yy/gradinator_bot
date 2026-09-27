@@ -4,78 +4,97 @@ from html import escape
 
 from api.models import CellData, DaySchedule, PairResponse, WeekType
 
-WEEK_TYPE_EMOJI = {WeekType.NUMERATOR: "🔵", WeekType.DENOMINATOR: "🟠"}
 
-
-def _truncate(text: str, width: int) -> str:
-    if len(text) <= width:
-        return text.ljust(width)
-    return text[: width - 1].rstrip() + "…"
+WEEK_TYPE_EMOJI = {
+    WeekType.NUMERATOR: "🔵",
+    WeekType.DENOMINATOR: "🟠",
+}
 
 
 def _join(values: list[str]) -> str:
-    return " / ".join(v for v in values if v) or "—"
+    return ", ".join(value for value in values if value) or "—"
 
 
-def _active_cell(pair: PairResponse, week_type: WeekType) -> CellData | None:
-    return pair.denominator if week_type is WeekType.DENOMINATOR else pair.numerator
+def _active_cell(
+    pair: PairResponse,
+    week_type: WeekType,
+) -> CellData | None:
+    active = (
+        pair.numerator
+        if week_type is WeekType.NUMERATOR
+        else pair.denominator
+    )
+
+    if pair.has_changes:
+        if active is not None and not active.is_empty:
+            return active
+
+        alternative = (
+            pair.denominator
+            if week_type is WeekType.NUMERATOR
+            else pair.numerator
+        )
+
+        if alternative is not None and not alternative.is_empty:
+            return alternative
+
+    return active
 
 
 def format_day_header(schedule: DaySchedule) -> str:
     emoji = WEEK_TYPE_EMOJI[schedule.week_type]
+
     return (
         f"<b>{escape(schedule.day)}, {escape(schedule.date)}</b>\n"
-        f"{emoji} Неделя: <b>{schedule.week_type.label}</b> · Группа: <code>{escape(schedule.group)}</code>"
+        f"{emoji} Неделя: <b>{schedule.week_type.label}</b> · "
+        f"Группа: <code>{escape(schedule.group)}</code>"
     )
 
 
-def format_schedule_table(schedule: DaySchedule) -> str:
-    rows = ["№  Предмет            Ауд   "]
-    rows.append("─" * len(rows[0]))
+def format_pair(
+    pair: PairResponse,
+    week_type: WeekType,
+) -> str | None:
+    cell = _active_cell(pair, week_type)
 
-    for pair in sorted(schedule.pairs, key=lambda p: p.pair_number):
-        cell = _active_cell(pair, schedule.week_type)
-        mark = "❗" if pair.has_changes else " "
-        if cell is None or cell.is_empty:
-            rows.append(f"{pair.pair_number:<2} {mark}окно")
-            continue
+    if cell is None or cell.is_empty:
+        return None
 
-        subject = _truncate(_join(cell.subjects), 18)
-        room = _truncate(_join(cell.rooms), 5)
-        rows.append(f"{pair.pair_number:<2}{mark}{subject} {room}")
+    subject = _join(cell.subjects)
+    rooms = _join(cell.rooms)
+    teachers = _join(cell.teachers)
 
-    return "<pre>" + escape("\n".join(rows)) + "</pre>"
+    lines = [
+        f"<b>{pair.pair_number}</b>",
+        f"📚 {escape(subject)}",
+        f"   🏫 {escape(rooms)} · 👤 {escape(teachers)}",
+    ]
 
-
-def format_teachers_line(schedule: DaySchedule) -> str:
-    lines = []
-    for pair in sorted(schedule.pairs, key=lambda p: p.pair_number):
-        cell = _active_cell(pair, schedule.week_type)
-        if cell is None or cell.is_empty or not cell.teachers:
-            continue
-        lines.append(f"<b>{pair.pair_number}.</b> {escape(_join(cell.teachers))}")
-
-    if not lines:
-        return ""
+    if pair.has_changes:
+        lines.append("   ❗ <i>замена</i>")
 
     return "\n".join(lines)
 
 
 def format_day_schedule(schedule: DaySchedule) -> str:
     header = format_day_header(schedule)
-    table = format_schedule_table(schedule)
-    teachers = format_teachers_line(schedule)
 
-    if not schedule.pairs:
+    pairs = []
+
+    for pair in sorted(schedule.pairs, key=lambda pair: pair.pair_number):
+        formatted = format_pair(pair, schedule.week_type)
+
+        if formatted:
+            pairs.append(formatted)
+
+    if not pairs:
         return f"{header}\n\n<i>Пар в этот день нет 🎉</i>"
 
-    body = f"{header}\n\n{table}"
-
-    if teachers:
-        body += f"\n<blockquote expandable>👤 <b>Преподаватели</b>\n{teachers}</blockquote>"
-
-    return body
+    return f"{header}\n\n" + "\n\n".join(pairs)
 
 
 def format_string_list(values: list[str]) -> str:
-    return "\n".join(f"• <code>{escape(v)}</code>" for v in values)
+    return "\n".join(
+        f"• <code>{escape(value)}</code>"
+        for value in values
+    )
