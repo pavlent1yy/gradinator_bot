@@ -1,49 +1,51 @@
-# Maven / Gradle
-target/
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Packaging
 build/
-.gradle/
-!.mvn/wrapper/maven-wrapper.jar
+dist/
+*.egg-info/
+.eggs/
 
-# Node / Next.js
-node_modules/
-.next/
-*.tsbuildinfo
+# SQLite / local database
+*.sqlite3
+*.sqlite3-journal
+*.db
 
-**/.env
-
-# IDE
-.idea/
-*.iml
-*.iws
-out/
-
-# Eclipse / STS
-.classpath
-.project
-.settings/
-.apt_generated/
-
-# NetBeans
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
-
-# VS Code
-.vscode/
-
-# Logs and temporary files
+# Logs
 *.log
+
+# Temporary files
 *.tmp
 *.bak
 *.swp
+*~
+
+# IDE
+.idea/
+.vscode/
+*.iml
 
 # OS
 .DS_Store
 Thumbs.db
 
-# Local / generated project data
-postgres/
-scheduleFiles/
-.env
+# Test / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
