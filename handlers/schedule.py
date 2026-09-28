@@ -1,10 +1,11 @@
 from datetime import date, timedelta
 
-from aiogram import Router
+from aiogram import F, Router
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import CallbackQuery
 
 from api import GApiClient, GApiError, GApiNotFound
+from api.models import WeekType
 from keyboards.callbacks import MenuAction, ScheduleOffset
 from keyboards.menu import back_to_menu
 from keyboards.schedule import schedule_nav
@@ -32,8 +33,6 @@ async def _get_schedule(
 
     target_date = today + timedelta(days=offset_days[offset])
 
-    # Воскресенье не запрашиваем у API.
-    # Сразу перенаправляем на понедельник.
     if target_date.weekday() == 6:
         target_date += timedelta(days=1)
 
@@ -55,10 +54,17 @@ async def show_schedule(
     storage: UserStorage,
 ):
     if date.today().weekday() == 6 and callback_data.offset == "today":
-        await callback.answer()
+        try:
+            await callback.answer()
+        except TelegramBadRequest:
+            pass
         return
 
-    await callback.answer("Загружаю…")
+    try:
+        await callback.answer("Загружаю…")
+    except TelegramBadRequest as e:
+        if "query is too old" not in str(e):
+            raise
 
     group = await storage.get_group(callback.from_user.id)
 
@@ -92,7 +98,28 @@ async def show_schedule(
             raise
 
 
-@router.callback_query(MenuAction.filter())
+@router.callback_query(MenuAction.filter(F.action == "weektype"))
+async def show_weektype(
+    callback: CallbackQuery,
+    api: GApiClient,
+):
+    try:
+        week_type = await api.get_current_week_type()
+    except GApiError as e:
+        await callback.answer(str(e), show_alert=True)
+        return
+
+    emoji = "🔵" if week_type is WeekType.NUMERATOR else "🟠"
+
+    await callback.message.edit_text(
+        f"🗓 <b>Тип недели</b>\n\n"
+        f"{emoji} Сейчас <b>{week_type.label}</b>.",
+        reply_markup=back_to_menu(),
+    )
+    await callback.answer()
+
+
+@router.callback_query(MenuAction.filter(F.action != "reference"))
 async def handle_menu_action(
     callback: CallbackQuery,
     callback_data: MenuAction,

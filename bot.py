@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import os
 
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
@@ -9,6 +8,7 @@ from aiogram.enums import ParseMode
 
 from api import GApiClient
 from config import load_config
+import config
 from handlers import router
 from storage import UserStorage
 
@@ -22,16 +22,15 @@ logging.basicConfig(
 async def main():
     config = load_config()
 
-    proxy = os.getenv("PROXY", "").strip()
-    if proxy:
-        session = AiohttpSession(proxy=proxy)
-        logging.getLogger(__name__).info("Используется прокси: %s", proxy)
-    else:
-        session = None
+    session = AiohttpSession(
+        proxy="socks5://127.0.0.1:10808"
+    )
 
     bot = Bot(
         token=config.bot_token,
-        default=DefaultBotProperties(parse_mode=ParseMode.HTML),
+        default=DefaultBotProperties(
+            parse_mode=ParseMode.HTML
+        ),
         session=session,
     )
 
