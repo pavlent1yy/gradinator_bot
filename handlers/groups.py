@@ -46,7 +46,12 @@ async def show_groups(callback: CallbackQuery, callback_data: DeptPick, api: GAp
 
 @router.callback_query(GroupPage.filter())
 async def paginate_groups(callback: CallbackQuery, callback_data: GroupPage, api: GApiClient):
-    by_dept = await api.get_groups_by_department()
+    try:
+        by_dept = await api.get_groups_by_department()
+    except GApiError as e:
+        await callback.answer(str(e), show_alert=True)
+        return
+
     groups = sorted(by_dept.get(callback_data.dept, []))
 
     await callback.message.edit_reply_markup(

@@ -5,13 +5,6 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from .callbacks import MenuAction, ScheduleOffset
 
 
-from datetime import date
-
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
-
-from .callbacks import MenuAction, ScheduleOffset
-
-
 OFFSET_LABELS = {
     "yesterday": "⬅️ Вчера",
     "today": "📅 Сегодня",

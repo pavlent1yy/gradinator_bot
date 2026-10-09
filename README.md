@@ -1,5 +1,7 @@
 # Gradinator Bot
 
+[![CI](https://github.com/pavlent1yy/gradinator_bot/actions/workflows/ci.yml/badge.svg)](https://github.com/pavlent1yy/gradinator_bot/actions/workflows/ci.yml)
+
 Gradinator Bot — Telegram-клиент информационной системы Gradinator, предназначенный для быстрого доступа к расписанию Ярославского государственного колледжа градостроительства.
 
 Бот работает поверх **G-API** и предоставляет расписание учебных групп через интерфейс Telegram. Помимо расписания, бот позволяет получить тип текущей недели и использовать справочники преподавателей, учебных предметов и аудиторий.
@@ -152,6 +154,26 @@ python bot.py
 
 После запуска бот начинает получать обновления через Telegram Bot API.
 
+## Деплой на Ubuntu Server
+
+```bash
+git clone https://github.com/pavlent1yy/gradinator_bot.git
+cd gradinator_bot
+sudo ./deploy/install.sh   # первый запуск создаст .env — заполни его и запусти снова
+```
+
+Скрипт ставит Docker, включает его автозапуск и поднимает контейнер с `restart: always`. Бот раз в 30 секунд проверяет связь с Telegram; если её нет 5 минут подряд, процесс завершается и Docker перезапускает контейнер. Статус: `docker compose ps`, логи: `docker compose logs -f`.
+
+## Тесты
+
+```bash
+pip install -r requirements-dev.txt
+pytest
+ruff check .
+```
+
+Тесты не обращаются к Telegram и G-API: HTTP-клиент проверяется на локальном aiohttp-сервере, хранилище — на временной SQLite.
+
 ## Технологии
 
 ### Backend
@@ -182,7 +204,10 @@ python bot.py
 BOT_TOKEN=
 API_BASE_URL=
 DB_PATH=
+PROXY=
 ```
+
+`PROXY` — необязательный адрес прокси до Telegram (например, `socks5://127.0.0.1:10808`). Если пусто, бот подключается напрямую.
 
 Секретные значения не должны помещаться в репозиторий.
 

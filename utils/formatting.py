@@ -5,6 +5,8 @@ from html import escape
 from api.models import CellData, DaySchedule, PairResponse, WeekType
 
 
+REPLACEMENT_TEACHER = "в предмете"
+
 WEEK_TYPE_EMOJI = {
     WeekType.NUMERATOR: "🔵",
     WeekType.DENOMINATOR: "🟠",
@@ -69,6 +71,12 @@ def format_pair(
         f"<b>{pair.pair_number:02}</b> │ "
         f"📚 {escape(subject)}"
     )
+
+    if REPLACEMENT_TEACHER in cell.teachers:
+        if not any(cell.rooms):
+            return first_line
+
+        return f"{first_line}\n   └─ 🏫 {escape(rooms)}"
 
     second_line = (
         f"   └─ 👤 {escape(teachers)} · "

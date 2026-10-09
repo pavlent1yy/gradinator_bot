@@ -17,7 +17,7 @@ class GApiClient:
         self._session: aiohttp.ClientSession | None = None
 
     async def __aenter__(self) -> GApiClient:
-        self._session = aiohttp.ClientSession()
+        self._session = self._create_session()
         return self
 
     async def __aexit__(self, *_):
@@ -34,7 +34,7 @@ class GApiClient:
         params: dict | None = None,
     ):
         if self._session is None:
-            self._session = aiohttp.ClientSession()
+            self._session = self._create_session()
 
         params = {
             key: value
@@ -71,12 +71,21 @@ class GApiClient:
                 if response.status >= 500:
                     raise GApiUnavailable("G-API сейчас недоступен")
 
-                return await response.json()
+                if response.content_type == "application/json":
+                    return await response.json()
+
+                return await response.text()
 
         except aiohttp.ClientError as e:
             raise GApiUnavailable(
                 "Не удалось связаться с G-API"
             ) from e
+
+    @staticmethod
+    def _create_session() -> aiohttp.ClientSession:
+        return aiohttp.ClientSession(
+            timeout=aiohttp.ClientTimeout(total=15),
+        )
 
     @staticmethod
     async def _safe_json(response: aiohttp.ClientResponse):

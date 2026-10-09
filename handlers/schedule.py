@@ -4,7 +4,7 @@ from aiogram import F, Router
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import CallbackQuery
 
-from api import GApiClient, GApiError, GApiNotFound
+from api import GApiClient, GApiError
 from api.models import WeekType
 from keyboards.callbacks import MenuAction, ScheduleOffset
 from keyboards.menu import back_to_menu
@@ -34,7 +34,7 @@ async def _get_schedule(
     target_date = today + timedelta(days=offset_days[offset])
 
     if target_date.weekday() == 6:
-        target_date += timedelta(days=1)
+        target_date += timedelta(days=-1 if offset == "yesterday" else 1)
 
         return await api.get_schedule(
             group=group,
@@ -81,9 +81,6 @@ async def show_schedule(
             group,
             callback_data.offset,
         )
-    except GApiNotFound as e:
-        await callback.message.answer(str(e))
-        return
     except GApiError as e:
         await callback.message.answer(str(e))
         return
@@ -117,11 +114,3 @@ async def show_weektype(
         reply_markup=back_to_menu(),
     )
     await callback.answer()
-
-
-@router.callback_query(MenuAction.filter(F.action != "reference"))
-async def handle_menu_action(
-    callback: CallbackQuery,
-    callback_data: MenuAction,
-):
-    ...

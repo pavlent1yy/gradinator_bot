@@ -2,14 +2,20 @@ services:
   gradinator-bot:
     build: .
     container_name: gradinator-bot
-    restart: unless-stopped
+    restart: always
     network_mode: host
     env_file:
       - .env
     environment:
       TZ: Europe/Moscow
+      DB_PATH: /app/data/gradinator_bot.sqlite3
     volumes:
       - bot_data:/app/data
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 volumes:
   bot_data:

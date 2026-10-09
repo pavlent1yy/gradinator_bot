@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from pathlib import Path
 
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
@@ -8,7 +9,6 @@ from aiogram.enums import ParseMode
 
 from api import GApiClient
 from config import load_config
-import config
 from handlers import router
 from storage import UserStorage
 
@@ -19,11 +19,38 @@ logging.basicConfig(
 )
 
 
+HEARTBEAT_INTERVAL = 30
+HEARTBEAT_MAX_FAILURES = 10
+
+
+async def heartbeat(bot: Bot, dp: Dispatcher, path: str):
+    file = Path(path)
+    failures = 0
+
+    while True:
+        try:
+            await bot.get_me()
+            file.touch()
+            failures = 0
+        except Exception:
+            failures += 1
+            logging.exception("Heartbeat: Telegram недоступен")
+
+            if failures >= HEARTBEAT_MAX_FAILURES:
+                logging.critical("Heartbeat: нет связи с Telegram, перезапуск")
+                await dp.stop_polling()
+                return
+
+        await asyncio.sleep(HEARTBEAT_INTERVAL)
+
+
 async def main():
     config = load_config()
 
-    session = AiohttpSession(
-        proxy="socks5://127.0.0.1:10808"
+    session = (
+        AiohttpSession(proxy=config.proxy)
+        if config.proxy
+        else AiohttpSession()
     )
 
     bot = Bot(
@@ -45,7 +72,18 @@ async def main():
         dp["storage"] = storage
 
         await bot.delete_webhook(drop_pending_updates=True)
-        await dp.start_polling(bot)
+
+        heartbeat_task = asyncio.create_task(
+            heartbeat(bot, dp, config.heartbeat_path)
+        )
+
+        try:
+            await dp.start_polling(bot)
+        finally:
+            heartbeat_task.cancel()
+
+        if heartbeat_task.done() and not heartbeat_task.cancelled():
+            raise SystemExit(1)
 
 
 if __name__ == "__main__":
