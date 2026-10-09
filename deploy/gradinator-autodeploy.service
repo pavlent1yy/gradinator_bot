@@ -1,0 +1,10 @@
+[Unit]
+Description=Gradinator bot autodeploy
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=pavel
+WorkingDirectory=/srv/gradinator_bot
+ExecStart=/srv/gradinator_bot/deploy/autodeploy.sh

@@ -57,10 +57,27 @@ def test_empty_day():
     assert "Пар в этот день нет" in text
 
 
-def test_day_with_only_other_week_pairs_is_empty():
+def test_merged_cell_shown_on_both_weeks():
     text = format_day_schedule(
         make_day(
-            [{"pairNumber": 2, "numerator": cell("Архитектура"), "hasChanges": False}]
+            [{"pairNumber": 2, "numerator": cell("Архитектура"), "denominator": None, "hasChanges": False}]
+        )
+    )
+
+    assert "Архитектура" in text
+
+
+def test_empty_active_cell_hides_pair():
+    text = format_day_schedule(
+        make_day(
+            [
+                {
+                    "pairNumber": 2,
+                    "numerator": cell("Архитектура"),
+                    "denominator": {"subjects": [], "teachers": [], "rooms": []},
+                    "hasChanges": False,
+                }
+            ]
         )
     )
 

@@ -27,20 +27,14 @@ def _active_cell(
         else pair.denominator
     )
 
-    if pair.has_changes:
-        if active is not None and not active.is_empty:
-            return active
+    if active is not None and not (pair.has_changes and active.is_empty):
+        return active
 
-        alternative = (
-            pair.denominator
-            if week_type is WeekType.NUMERATOR
-            else pair.numerator
-        )
-
-        if alternative is not None and not alternative.is_empty:
-            return alternative
-
-    return active
+    return (
+        pair.denominator
+        if week_type is WeekType.NUMERATOR
+        else pair.numerator
+    )
 
 
 def format_day_header(schedule: DaySchedule) -> str:

@@ -31,3 +31,7 @@ systemctl enable --now docker
 
 docker compose up -d --build
 docker compose ps
+
+cp deploy/gradinator-autodeploy.service deploy/gradinator-autodeploy.timer /etc/systemd/system/
+systemctl daemon-reload
+systemctl enable --now gradinator-autodeploy.timer
